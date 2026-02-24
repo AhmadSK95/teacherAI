@@ -9,6 +9,7 @@ export type {
   RequestRepository,
   ArtifactRepository,
   PlanGraphRepository,
+  AttachmentRepository,
 } from './repository/interfaces.js';
 
 // SQLite implementations
@@ -17,10 +18,12 @@ export { SqliteClassRepository } from './repository/sqlite-class.js';
 export { SqliteRequestRepository } from './repository/sqlite-request.js';
 export { SqliteArtifactRepository } from './repository/sqlite-artifact.js';
 export { SqlitePlanGraphRepository } from './repository/sqlite-plan-graph.js';
+export { SqliteAttachmentRepository } from './repository/sqlite-attachment.js';
 
 // Service interfaces
 export type {
   IntakeService,
+  AttachmentInput,
   PlanningService,
   ContentAssemblyService,
   DeliveryService,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createRequest } from '../api';
 
@@ -9,10 +9,34 @@ const suggestions = [
   'Create differentiated reading materials for a mixed-level ELA class',
 ];
 
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILES = 5;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function validateFile(file: File): string | null {
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return `"${file.name}" is not a supported file type. Allowed: PDF, DOCX, TXT, PNG, JPG`;
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return `"${file.name}" exceeds the 10 MB size limit`;
+  }
+  return null;
+}
+
 export default function Composer(): React.ReactElement {
   const [prompt, setPrompt] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -20,6 +44,50 @@ export default function Composer(): React.ReactElement {
     const prefill = searchParams.get('prompt');
     if (prefill) setPrompt(prefill);
   }, [searchParams]);
+
+  const addFiles = useCallback((newFiles: FileList | File[]) => {
+    const incoming = Array.from(newFiles);
+    setError(null);
+
+    for (const file of incoming) {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
+
+    setFiles((prev) => {
+      const combined = [...prev, ...incoming];
+      if (combined.length > MAX_FILES) {
+        setError(`Maximum ${MAX_FILES} files allowed`);
+        return prev;
+      }
+      return combined;
+    });
+  }, []);
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length > 0) {
+      addFiles(e.dataTransfer.files);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +97,7 @@ export default function Composer(): React.ReactElement {
     setError(null);
 
     try {
-      const result = await createRequest(prompt.trim());
+      const result = await createRequest(prompt.trim(), files.length > 0 ? files : undefined);
       navigate(`/workbench/${result.request_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -67,6 +135,84 @@ export default function Composer(): React.ReactElement {
               rows={7}
               className="w-full px-5 py-4 text-gray-900 placeholder-gray-400 resize-y border-0 focus:ring-0 focus:outline-none text-[15px] leading-relaxed"
               disabled={loading}
+            />
+          </div>
+
+          {/* File Upload Zone */}
+          <div
+            className={`mx-4 mb-3 border-2 border-dashed rounded-xl p-4 text-center transition-colors ${
+              dragOver
+                ? 'border-primary-400 bg-primary-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            data-testid="file-drop-zone"
+          >
+            {files.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {files.map((file, i) => (
+                    <div
+                      key={`${file.name}-${i}`}
+                      className="inline-flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 text-sm text-gray-700"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                      <span className="truncate max-w-[150px]">{file.name}</span>
+                      <span className="text-gray-400 text-xs">{formatFileSize(file.size)}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {files.length < MAX_FILES && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs text-primary-600 hover:text-primary-700"
+                  >
+                    + Add more files
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div
+                className="cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <svg className="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                <p className="text-sm text-gray-500">
+                  Drag & drop files here, or <span className="text-primary-600 font-medium">browse</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  PDF, DOCX, TXT, PNG, JPG — up to 10 MB each, max 5 files
+                </p>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) addFiles(e.target.files);
+                e.target.value = '';
+              }}
+              data-testid="file-input"
             />
           </div>
 

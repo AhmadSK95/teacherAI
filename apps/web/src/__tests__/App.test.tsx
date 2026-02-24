@@ -79,6 +79,12 @@ describe('Composer', () => {
     expect(button).not.toBeDisabled();
   });
 
+  it('renders file upload drop zone', () => {
+    renderWithRouter('/composer');
+    expect(screen.getByTestId('file-drop-zone')).toBeInTheDocument();
+    expect(screen.getByText(/Drag & drop files here/)).toBeInTheDocument();
+  });
+
   it('shows error on failed API call', async () => {
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({

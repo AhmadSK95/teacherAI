@@ -25,3 +25,7 @@ export interface ArtifactRepository extends Repository<import('@teachassist/sche
 export interface PlanGraphRepository extends Repository<import('@teachassist/schemas').PlanGraph> {
   findByRequestId(requestId: string): import('@teachassist/schemas').PlanGraph | null;
 }
+
+export interface AttachmentRepository extends Repository<import('@teachassist/schemas').AttachmentMeta> {
+  findByRequestId(requestId: string): import('@teachassist/schemas').AttachmentMeta[];
+}

@@ -1,7 +1,14 @@
 import type { RequestEvent, PlanGraph, ArtifactOutput } from '@teachassist/schemas';
 
+export interface AttachmentInput {
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+}
+
 export interface IntakeService {
-  processRequest(prompt: string, teacherId: string, classId?: string): Promise<RequestEvent>;
+  processRequest(prompt: string, teacherId: string, classId?: string, attachments?: AttachmentInput[]): Promise<RequestEvent>;
 }
 
 export interface PlanningService {

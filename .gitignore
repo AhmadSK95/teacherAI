@@ -28,6 +28,7 @@ Thumbs.db
 *.db-shm
 *.db-wal
 data/teachassist.db
+data/uploads/
 
 # Logs
 logs/

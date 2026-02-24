@@ -11,15 +11,31 @@ export interface CreateRequestResponse {
   plan_id: string;
   job_id: string;
   inferred_intent: string;
+  attachment_count: number;
   status: string;
 }
 
-export async function createRequest(prompt: string): Promise<CreateRequestResponse> {
-  const res = await fetch(`${API_BASE}/requests`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
-  });
+export async function createRequest(prompt: string, files?: File[]): Promise<CreateRequestResponse> {
+  let res: Response;
+
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    for (const file of files) {
+      formData.append('files', file);
+    }
+    res = await fetch(`${API_BASE}/requests`, {
+      method: 'POST',
+      body: formData,
+    });
+  } else {
+    res = await fetch(`${API_BASE}/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(err.error || `Request failed: ${res.status}`);

@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import type { ServiceContainer } from '@teachassist/core';
+import fs from 'fs';
+import path from 'path';
+import type { ServiceContainer, AttachmentInput } from '@teachassist/core';
 import type { InMemoryQueue } from '@teachassist/worker';
+import { upload } from '../middleware/upload.js';
 
 export function createRequestsRouter(services: ServiceContainer, queue: InMemoryQueue): Router {
   const router = Router();
 
   // POST /v1/requests — Intake + plan + enqueue generation
-  router.post('/requests', async (req, res, next) => {
+  router.post('/requests', upload.array('files', 5), async (req, res, next) => {
     try {
       const { prompt, classId } = req.body;
       if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -21,8 +24,27 @@ export function createRequestsRouter(services: ServiceContainer, queue: InMemory
         return;
       }
 
+      // Build attachment inputs from uploaded files
+      const files = (req.files as Express.Multer.File[]) || [];
+      const attachments: AttachmentInput[] = files.map((f) => ({
+        originalName: f.originalname,
+        mimeType: f.mimetype,
+        sizeBytes: f.size,
+        storagePath: f.path,
+      }));
+
       // 1. Intake: classify intent, create request event
-      const requestEvent = await services.intake.processRequest(prompt.trim(), teacherId, classId);
+      const requestEvent = await services.intake.processRequest(prompt.trim(), teacherId, classId, attachments);
+
+      // Move uploaded files from _tmp to data/uploads/<requestId>/
+      if (files.length > 0) {
+        const destDir = path.resolve('data/uploads', requestEvent.request_id);
+        fs.mkdirSync(destDir, { recursive: true });
+        for (const f of files) {
+          const dest = path.join(destDir, path.basename(f.path));
+          fs.renameSync(f.path, dest);
+        }
+      }
 
       // 2. Planning: create plan graph
       const plan = await services.planning.createPlan(requestEvent);
@@ -41,6 +63,7 @@ export function createRequestsRouter(services: ServiceContainer, queue: InMemory
         plan_id: plan.plan_id,
         job_id: job.id,
         inferred_intent: requestEvent.inferred_intent,
+        attachment_count: attachments.length,
         status: 'processing',
       });
     } catch (err) {

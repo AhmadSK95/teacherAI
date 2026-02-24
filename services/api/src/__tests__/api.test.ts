@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { createApp } from '../app.js';
 import { createDatabase, runMigrations, createServices } from '@teachassist/core';
 import { InMemoryQueue, createGeneratePackageHandler } from '@teachassist/worker';
@@ -91,6 +94,72 @@ describe('POST /v1/requests', () => {
   it('returns 400 for empty prompt', async () => {
     const res = await request(app).post('/v1/requests').send({ prompt: '  ' });
     expect(res.status).toBe(400);
+  });
+
+  it('accepts multipart form with files', async () => {
+    const tmpFile = path.join(os.tmpdir(), 'test-upload.txt');
+    fs.writeFileSync(tmpFile, 'Sample lesson content for upload test');
+
+    try {
+      const res = await request(app)
+        .post('/v1/requests')
+        .field('prompt', 'Create a lesson plan from this material')
+        .attach('files', tmpFile);
+
+      expect(res.status).toBe(201);
+      expect(res.body.request_id).toBeDefined();
+      expect(res.body.attachment_count).toBe(1);
+      expect(res.body.inferred_intent).toBe('lesson_plan');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('returns attachment_count 0 for JSON-only requests', async () => {
+    const res = await request(app)
+      .post('/v1/requests')
+      .send({ prompt: 'Create a worksheet' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.attachment_count).toBe(0);
+  });
+
+  it('rejects disallowed file types', async () => {
+    const tmpFile = path.join(os.tmpdir(), 'malicious.exe');
+    fs.writeFileSync(tmpFile, 'not a real exe');
+
+    try {
+      const res = await request(app)
+        .post('/v1/requests')
+        .field('prompt', 'Test with bad file')
+        .attach('files', tmpFile, { contentType: 'application/x-msdownload' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('File type not allowed');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('accepts multiple files', async () => {
+    const tmpFile1 = path.join(os.tmpdir(), 'doc1.txt');
+    const tmpFile2 = path.join(os.tmpdir(), 'doc2.txt');
+    fs.writeFileSync(tmpFile1, 'Document one');
+    fs.writeFileSync(tmpFile2, 'Document two');
+
+    try {
+      const res = await request(app)
+        .post('/v1/requests')
+        .field('prompt', 'Create a lesson from these')
+        .attach('files', tmpFile1)
+        .attach('files', tmpFile2);
+
+      expect(res.status).toBe(201);
+      expect(res.body.attachment_count).toBe(2);
+    } finally {
+      fs.unlinkSync(tmpFile1);
+      fs.unlinkSync(tmpFile2);
+    }
   });
 });
 
