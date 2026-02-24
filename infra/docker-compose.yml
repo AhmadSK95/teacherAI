@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_PATH=/app/data/teachassist.sqlite
+    volumes:
+      - ../data:/app/data
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    environment:
+      - NODE_ENV=development
+      - POLL_INTERVAL_MS=1000
+      - DATABASE_PATH=/app/data/teachassist.sqlite
+    volumes:
+      - ../data:/app/data
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://api:3001

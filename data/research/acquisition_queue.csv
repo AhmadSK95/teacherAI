@@ -1,0 +1,9 @@
+queue_id,source_id,next_action,owner,status,target_phase,risk,priority
+1,ST-WIDA-ELD,"Confirm license scope for product usage and caching.",product+data,todo,phase_1,"Licensing uncertainty can block ESL feature depth.",1
+2,IN-CLEVER-START,"Request sandbox credentials and define pilot district onboarding flow.",product+data,todo,phase_1,"Access approval timelines may delay integration tests.",1
+3,IN-GCLASSROOM,"Implement read-only pilot integration with scoped OAuth permissions.",product+data,todo,phase_1,"Scope creep if writeback added too early.",1
+5,PR-SDPC-NDPA,"Prepare legal checklist aligned with NDPA for pilot contracting.",product+data,todo,phase_1,"Procurement delay without legal readiness.",1
+7,CT-OPENSTAX-LICENSE,"Document allowed and disallowed uses in content ingestion policy.",product+data,todo,phase_1,"License breach risk if terms are not encoded.",1
+4,IN-CANVAS-API,"Design phase 2 adapter behind integration interface.",product+data,todo,phase_2,"Different district configurations increase support load.",2
+6,DS-EDFACTS-SPECS-2526,"Create derived district metrics dictionary tied to file specs.",product+data,todo,phase_1,"Metric inconsistency across states if not normalized.",2
+8,CP-DOE-AI-2025,"Map DOE guidance themes to product trust and safety controls.",product+data,todo,phase_1,"Weak policy narrative can hurt district buy-in.",2

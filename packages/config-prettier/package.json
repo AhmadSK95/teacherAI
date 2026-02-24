@@ -1,0 +1,9 @@
+{
+  "name": "@teachassist/config-prettier",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "prettier": "^3.4.0"
+  }
+}

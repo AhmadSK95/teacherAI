@@ -1,0 +1,29 @@
+{
+  "name": "@teachassist/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@teachassist/schemas": "*",
+    "@teachassist/prompts": "*",
+    "better-sqlite3": "^11.6.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@teachassist/config-typescript": "*",
+    "@teachassist/config-eslint": "*",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

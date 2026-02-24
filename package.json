@@ -1,0 +1,30 @@
+{
+  "name": "teachassist-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TeachAssist AI — Intelligent teacher ecosystem for US public school teachers",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=services/api",
+    "dev:worker": "npm run dev --workspace=services/worker",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:unit": "turbo run test -- --reporter=verbose",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "packageManager": "npm@11.6.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.10"
+  }
+}

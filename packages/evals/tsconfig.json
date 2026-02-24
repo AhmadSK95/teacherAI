@@ -1,0 +1,9 @@
+{
+  "extends": "@teachassist/config-typescript/node.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "resolveJsonModule": true
+  },
+  "include": ["src"]
+}
