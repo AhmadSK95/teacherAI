@@ -10,7 +10,11 @@ export function createDatabase(dbPath: string = ':memory:'): Database.Database {
 }
 
 export function runMigrations(db: Database.Database): void {
-  const migrationsDir = path.join(__dirname, 'migrations');
+  // Support both source (src/db/migrations) and dist (dist/db/migrations) paths
+  let migrationsDir = path.join(__dirname, 'migrations');
+  if (!fs.existsSync(migrationsDir)) {
+    migrationsDir = path.resolve(__dirname, '../../src/db/migrations');
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS _migrations (

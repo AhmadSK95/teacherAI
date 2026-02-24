@@ -15,12 +15,12 @@ function renderWithRouter(initialRoute = '/') {
 describe('App', () => {
   it('renders the app shell with navigation', () => {
     renderWithRouter();
-    expect(screen.getByText('TeachAssist AI')).toBeInTheDocument();
+    expect(screen.getByText('TeachAssist')).toBeInTheDocument();
   });
 
   it('renders Today Workspace at /', () => {
     renderWithRouter('/');
-    expect(screen.getByText('Today Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Good morning, Teacher')).toBeInTheDocument();
   });
 
   it('renders Composer at /composer', () => {
@@ -61,7 +61,7 @@ describe('App', () => {
 describe('Composer', () => {
   it('renders textarea and submit button', () => {
     renderWithRouter('/composer');
-    expect(screen.getByLabelText('What do you need?')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Describe what you want to create/)).toBeInTheDocument();
     expect(screen.getByText('Generate Package')).toBeInTheDocument();
   });
 
@@ -73,14 +73,13 @@ describe('Composer', () => {
 
   it('enables submit button when prompt has content', () => {
     renderWithRouter('/composer');
-    const textarea = screen.getByLabelText('What do you need?');
+    const textarea = screen.getByPlaceholderText(/Describe what you want to create/);
     fireEvent.change(textarea, { target: { value: 'Create a lesson plan' } });
     const button = screen.getByText('Generate Package');
     expect(button).not.toBeDisabled();
   });
 
   it('shows error on failed API call', async () => {
-    // Mock fetch to simulate failure
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -88,7 +87,7 @@ describe('Composer', () => {
     });
 
     renderWithRouter('/composer');
-    const textarea = screen.getByLabelText('What do you need?');
+    const textarea = screen.getByPlaceholderText(/Describe what you want to create/);
     fireEvent.change(textarea, { target: { value: 'Create a lesson plan' } });
     fireEvent.click(screen.getByText('Generate Package'));
 
@@ -106,7 +105,6 @@ describe('OutputWorkbench', () => {
   });
 
   it('shows loading indicator when fetching', () => {
-    // Mock fetch to never resolve (keeps loading state)
     global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
 
     renderWithRouter('/workbench/test-request-id');
@@ -115,6 +113,6 @@ describe('OutputWorkbench', () => {
 
   it('shows prompt message when no requestId', () => {
     renderWithRouter('/workbench');
-    expect(screen.getByText('Select a request to view generated artifacts.')).toBeInTheDocument();
+    expect(screen.getByText(/No request selected/)).toBeInTheDocument();
   });
 });
