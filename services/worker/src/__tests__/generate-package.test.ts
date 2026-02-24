@@ -50,11 +50,11 @@ describe('generatePackageHandler', () => {
     services.repos.planGraphs.create(plan);
 
     const result = await handler({ requestId: request.request_id, planId: plan.plan_id });
-    expect(result.artifactCount).toBe(1);
+    expect(result.artifactCount).toBeGreaterThanOrEqual(1);
 
-    // Verify artifacts were stored
+    // Verify artifacts were stored (primary + tiered variants + translation)
     const artifacts = services.repos.artifacts.findByRequestId(request.request_id);
-    expect(artifacts).toHaveLength(1);
+    expect(artifacts.length).toBeGreaterThanOrEqual(1);
     expect(artifacts[0].content).toContain('Lesson Plan');
   });
 

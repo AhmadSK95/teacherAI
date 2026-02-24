@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { ServiceContainer } from '@teachassist/core';
-import { DefaultDeliveryService } from '@teachassist/core';
+import { DefaultDeliveryService, EvaluationService } from '@teachassist/core';
 
 export function createArtifactsRouter(services: ServiceContainer): Router {
   const router = Router();
@@ -76,6 +76,36 @@ export function createArtifactsRouter(services: ServiceContainer): Router {
     res.setHeader('Content-Type', exportResult.contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${exportResult.fileName}"`);
     res.send(exportResult.content);
+  });
+
+  // POST /v1/artifacts/:id/evaluate — Run quality evaluation
+  router.post('/artifacts/:id/evaluate', async (req, res, next) => {
+    try {
+      const artifact = services.repos.artifacts.findById(req.params.id);
+      if (!artifact) {
+        res.status(404).json({ error: 'Artifact not found' });
+        return;
+      }
+
+      const evalService = new EvaluationService(services.aiProvider);
+
+      // Run deterministic checks
+      const quality = evalService.checkMinimumQuality(artifact);
+
+      // Run AI-powered evaluation
+      const evaluation = await evalService.evaluate(artifact);
+
+      // Run compliance check
+      const compliance = await services.policy.checkCompliance(req.params.id);
+
+      res.json({
+        ...evaluation,
+        quality_check: quality,
+        compliance,
+      });
+    } catch (err) {
+      next(err);
+    }
   });
 
   return router;

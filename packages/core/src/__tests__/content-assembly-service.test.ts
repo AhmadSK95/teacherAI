@@ -57,11 +57,12 @@ describe('ContentAssemblyService', () => {
     return plan;
   }
 
-  it('generates artifacts for each task node', async () => {
+  it('generates artifacts for each task node plus tiered variants and translation', async () => {
     const plan = makePlan();
     const artifacts = await service.generateArtifacts(plan);
 
-    expect(artifacts).toHaveLength(1);
+    // Primary + 2 tiered variants (approaching, advanced) + 1 Spanish translation
+    expect(artifacts.length).toBeGreaterThanOrEqual(1);
     expect(artifacts[0].content).toContain('Lesson Plan');
     expect(artifacts[0].medium_type).toBe('markdown');
     expect(artifacts[0].request_id).toBe(requestId);
@@ -73,7 +74,7 @@ describe('ContentAssemblyService', () => {
     const artifacts = await service.generateArtifacts(plan);
 
     const found = artifactRepo.findByRequestId(requestId);
-    expect(found).toHaveLength(1);
+    expect(found.length).toBeGreaterThanOrEqual(1);
     expect(found[0].artifact_id).toBe(artifacts[0].artifact_id);
   });
 

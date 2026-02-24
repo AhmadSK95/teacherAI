@@ -66,12 +66,12 @@ describe('DeliveryService', () => {
     expect(result!.fileName).toContain('.md');
   });
 
-  it('exports as HTML for PDF medium', async () => {
+  it('exports as real PDF for PDF medium', async () => {
     const result = await service.getExportContent(artifactId, 'pdf');
     expect(result).not.toBeNull();
-    expect(result!.contentType).toBe('text/html');
-    expect(result!.content).toContain('<html>');
-    expect(result!.content).toContain('<h1>');
+    expect(result!.contentType).toBe('application/pdf');
+    expect(result!.fileName).toContain('.pdf');
+    expect(Buffer.isBuffer(result!.content)).toBe(true);
   });
 
   it('returns null for nonexistent artifact', async () => {

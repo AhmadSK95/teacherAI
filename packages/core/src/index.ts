@@ -33,6 +33,7 @@ export type {
 // AI Provider
 export type { AIProvider, AIRequest, AIResponse } from './services/ai-provider.js';
 export { MockAIProvider } from './services/mock-ai-provider.js';
+export { ClaudeAIProvider } from './services/claude-ai-provider.js';
 
 // Service implementations
 export { DefaultIntakeService, classifyIntent } from './services/intake-service.js';
@@ -44,7 +45,15 @@ export type { ExportResult } from './services/delivery-service.js';
 
 // Service factory
 export { createServices, createRepositories } from './services/create-services.js';
-export type { ServiceContainer, Repositories } from './services/create-services.js';
+export type { ServiceContainer, Repositories, CreateServicesOptions } from './services/create-services.js';
+
+// Evaluation service
+export { EvaluationService } from './services/evaluation-service.js';
+export type { EvaluationResult, EvaluationCriterion } from './services/evaluation-service.js';
+
+// File parser
+export { parseFile, parseFiles } from './services/file-parser.js';
+export type { ParsedFile } from './services/file-parser.js';
 
 // Template initialization
 export { initTemplates } from './services/init-templates.js';

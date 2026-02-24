@@ -14,6 +14,7 @@ import { DefaultContentAssemblyService } from './content-assembly-service.js';
 import { DefaultPolicyService } from './policy-service.js';
 import { DefaultDeliveryService } from './delivery-service.js';
 import { MockAIProvider } from './mock-ai-provider.js';
+import { ClaudeAIProvider } from './claude-ai-provider.js';
 
 export interface Repositories {
   teachers: TeacherRepository;
@@ -45,15 +46,35 @@ export function createRepositories(db: Database.Database): Repositories {
   };
 }
 
-export function createServices(db: Database.Database, aiProvider?: AIProvider): ServiceContainer {
+export interface CreateServicesOptions {
+  aiProvider?: AIProvider;
+  aiApiKey?: string;
+  aiModel?: string;
+}
+
+export function createServices(db: Database.Database, optsOrProvider?: AIProvider | CreateServicesOptions): ServiceContainer {
   const repos = createRepositories(db);
-  const provider = aiProvider || new MockAIProvider();
+
+  let provider: AIProvider;
+  if (optsOrProvider && 'generate' in optsOrProvider) {
+    // Backward compat: passed an AIProvider directly
+    provider = optsOrProvider;
+  } else {
+    const opts = (optsOrProvider as CreateServicesOptions) || {};
+    if (opts.aiProvider) {
+      provider = opts.aiProvider;
+    } else if (opts.aiApiKey) {
+      provider = new ClaudeAIProvider(opts.aiApiKey, opts.aiModel);
+    } else {
+      provider = new MockAIProvider();
+    }
+  }
 
   return {
     repos,
     intake: new DefaultIntakeService(repos.requests, repos.attachments),
     planning: new DefaultPlanningService(repos.planGraphs),
-    contentAssembly: new DefaultContentAssemblyService(provider, repos.artifacts, repos.planGraphs, repos.requests),
+    contentAssembly: new DefaultContentAssemblyService(provider, repos.artifacts, repos.planGraphs, repos.requests, repos.attachments),
     delivery: new DefaultDeliveryService(repos.artifacts),
     policy: new DefaultPolicyService(repos.artifacts, repos.requests),
     aiProvider: provider,

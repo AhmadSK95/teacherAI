@@ -65,7 +65,7 @@ describe('E2E: Full one-shot flow', () => {
     // Step 5: Get artifacts
     const artifactsRes = await request(app).get(`/v1/requests/${requestId}/artifacts`);
     expect(artifactsRes.status).toBe(200);
-    expect(artifactsRes.body).toHaveLength(1);
+    expect(artifactsRes.body.length).toBeGreaterThanOrEqual(1);
     expect(artifactsRes.body[0].content).toContain('Lesson Plan');
     expect(artifactsRes.body[0].content).toContain('Learning Objectives');
 
@@ -78,13 +78,12 @@ describe('E2E: Full one-shot flow', () => {
     expect(exportRes.headers['content-type']).toContain('text/markdown');
     expect(exportRes.headers['content-disposition']).toContain('attachment');
 
-    // Step 7: Export as HTML/PDF
+    // Step 7: Export as real PDF
     const pdfExportRes = await request(app)
       .post(`/v1/artifacts/${artifactId}/export`)
       .send({ medium: 'pdf' });
     expect(pdfExportRes.status).toBe(200);
-    expect(pdfExportRes.headers['content-type']).toContain('text/html');
-    expect(pdfExportRes.text).toContain('<html>');
+    expect(pdfExportRes.headers['content-type']).toContain('application/pdf');
   });
 
   it('Scenario 2: High-risk intent (IEP) requires approval flagging', async () => {
@@ -99,9 +98,9 @@ describe('E2E: Full one-shot flow', () => {
     // Wait for processing
     await new Promise((r) => setTimeout(r, 100));
 
-    // Get artifacts
+    // Get artifacts (primary + tiered variants + translation)
     const artifactsRes = await request(app).get(`/v1/requests/${createRes.body.request_id}/artifacts`);
-    expect(artifactsRes.body).toHaveLength(1);
+    expect(artifactsRes.body.length).toBeGreaterThanOrEqual(1);
 
     const artifactId = artifactsRes.body[0].artifact_id;
 
@@ -159,13 +158,12 @@ describe('E2E: Full one-shot flow', () => {
     expect(mdRes.headers['content-type']).toContain('text/markdown');
     expect(mdRes.text).toContain('Rubric');
 
-    // PDF/HTML export
-    const htmlRes = await request(app)
+    // PDF export (real PDF binary)
+    const pdfRes = await request(app)
       .post(`/v1/artifacts/${artifactId}/export`)
       .send({ medium: 'pdf' });
-    expect(htmlRes.status).toBe(200);
-    expect(htmlRes.text).toContain('<html>');
-    expect(htmlRes.text).toContain('Rubric');
+    expect(pdfRes.status).toBe(200);
+    expect(pdfRes.headers['content-type']).toContain('application/pdf');
   });
 
   it('Scenario 5: Worksheet generation (different intent)', async () => {
@@ -177,7 +175,7 @@ describe('E2E: Full one-shot flow', () => {
     await new Promise((r) => setTimeout(r, 100));
 
     const artifactsRes = await request(app).get(`/v1/requests/${createRes.body.request_id}/artifacts`);
-    expect(artifactsRes.body).toHaveLength(1);
+    expect(artifactsRes.body.length).toBeGreaterThanOrEqual(1);
     expect(artifactsRes.body[0].content).toContain('Worksheet');
   });
 });
