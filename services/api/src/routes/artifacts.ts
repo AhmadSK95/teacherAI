@@ -57,25 +57,29 @@ export function createArtifactsRouter(services: ServiceContainer): Router {
   });
 
   // POST /v1/artifacts/:id/export — Export artifact
-  router.post('/artifacts/:id/export', async (req, res) => {
-    const artifact = services.repos.artifacts.findById(req.params.id);
-    if (!artifact) {
-      res.status(404).json({ error: 'Artifact not found' });
-      return;
+  router.post('/artifacts/:id/export', async (req, res, next) => {
+    try {
+      const artifact = services.repos.artifacts.findById(req.params.id);
+      if (!artifact) {
+        res.status(404).json({ error: 'Artifact not found' });
+        return;
+      }
+
+      const medium = req.body.medium || 'markdown';
+      const deliveryService = services.delivery as DefaultDeliveryService;
+      const exportResult = await deliveryService.getExportContent(req.params.id, medium);
+
+      if (!exportResult) {
+        res.status(500).json({ error: 'Export failed' });
+        return;
+      }
+
+      res.setHeader('Content-Type', exportResult.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${exportResult.fileName}"`);
+      res.send(exportResult.content);
+    } catch (err) {
+      next(err);
     }
-
-    const medium = req.body.medium || 'markdown';
-    const deliveryService = services.delivery as DefaultDeliveryService;
-    const exportResult = await deliveryService.getExportContent(req.params.id, medium);
-
-    if (!exportResult) {
-      res.status(500).json({ error: 'Export failed' });
-      return;
-    }
-
-    res.setHeader('Content-Type', exportResult.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${exportResult.fileName}"`);
-    res.send(exportResult.content);
   });
 
   // POST /v1/artifacts/:id/evaluate — Run quality evaluation

@@ -103,7 +103,7 @@ export class DefaultDeliveryService implements DeliveryService {
 
   private async generatePptx(markdownContent: string, slug: string): Promise<ExportResult> {
     const mod = await import('pptxgenjs');
-    const PptxGenJS = (mod as any).default || mod;
+    const PptxGenJS = (mod as any).default?.default || (mod as any).default || mod;
     const pptx = new PptxGenJS();
     pptx.author = 'TeachAssist AI';
     pptx.subject = 'Teaching Material';
